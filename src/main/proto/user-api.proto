@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.yamalc.ytmp.userapi.grpc";
+option java_outer_classname = "AuthenticateService";
+option objc_class_prefix = "SPT";
+
+package com.yamalc.ytmp.userapi;
+
+service User {
+    rpc Authenticate (AuthenticateRequest) returns (AuthenticateResponse) {}
+}
+
+message AuthenticateRequest {
+    string id = 1;
+    string password = 2;
+}
+
+message AuthenticateResponse {
+    bool authenticateResult = 1;
+}
