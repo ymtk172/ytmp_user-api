@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-import com.yamalc.ytmp.userapi.grpc.AuthenticateRequest;
-import com.yamalc.ytmp.userapi.grpc.AuthenticateResponse;
-import com.yamalc.ytmp.userapi.grpc.UserGrpc;
+import com.yamalc.ytmp.grpc.user.AuthenticateRequest;
+import com.yamalc.ytmp.grpc.user.AuthenticateResponse;
+import com.yamalc.ytmp.grpc.user.UserGrpc;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
