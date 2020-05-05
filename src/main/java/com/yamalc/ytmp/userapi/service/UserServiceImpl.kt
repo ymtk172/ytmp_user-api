@@ -1,41 +1,49 @@
 package com.yamalc.ytmp.userapi.service
 
-import com.yamalc.ytmp.grpc.user.AuthenticateRequest
-import com.yamalc.ytmp.grpc.user.AuthenticateResponse
-import com.yamalc.ytmp.grpc.user.AuthenticateResponseType
-import com.yamalc.ytmp.grpc.user.UserGrpc
-import com.yamalc.ytmp.userapi.domain.Users
+import com.yamalc.ytmp.grpc.user.*
+import com.yamalc.ytmp.userapi.domain.UserProperties
 import com.yamalc.ytmp.userapi.mapper.UsersMapper
 import io.grpc.stub.StreamObserver
 import org.lognet.springboot.grpc.GRpcService
+import java.io.IOException
 import java.util.logging.Logger
 
 @GRpcService
-class UserService(val usersMapper: UsersMapper) : UserGrpc.UserImplBase() {
+class UserService(private val usersMapper: UsersMapper) : UserGrpc.UserImplBase() {
     private var logger: Logger = Logger.getLogger(javaClass.name)
-    override fun authenticate(request: AuthenticateRequest,
-                              responseObserver: StreamObserver<AuthenticateResponse>) {
+    override fun getUserInfo(request: UserIdRequest,
+                             responseObserver: StreamObserver<UserInfoResponse>) {
         logger.info(String.format("request: id = %s", request.id))
-        val result = dbAuthenticate(request)
-        logger.info(String.format("result: %b", result))
-        val authenticateResponse = AuthenticateResponse
+        val result: UserProperties = try {
+            usersMapper.select(request.id)
+        } catch (e: IOException) {
+            println("DB access error occurred")
+            throw e
+        }
+        val userInfoResponse = UserInfoResponse
                 .newBuilder()
-                .setAuthenticateResult(result)
+                .setId(result.user_id)
+                .setDisplayName(result.display_name)
                 .build()
-        responseObserver.onNext(authenticateResponse)
+        responseObserver.onNext(userInfoResponse)
         responseObserver.onCompleted()
     }
 
-    private fun dbAuthenticate(request: AuthenticateRequest): AuthenticateResponseType {
-        val user: Users = usersMapper.select(request.id)
-        if (user == null) {
-            logger.info("存在しないユーザIDです")
-            return AuthenticateResponseType.NOT_EXISTS
+    override fun registerUserInfo(request: UserInfoRequest,
+                                  responseObserver: StreamObserver<RegisterUserInfoResponse>) {
+        logger.info(String.format("request: id = %s", request.id))
+        val result: String = try {
+            val result: Int = usersMapper.insert(request.id, request.displayName)
+            println(request)
+            "success"
+        } catch (e: IOException) {
+            "DB access error occurred"
         }
-        if (request.password != user.password) {
-            logger.info("パスワードが間違っています。")
-            return AuthenticateResponseType.WRONG_PASSWORD
-        }
-        return AuthenticateResponseType.OK
+        val userInfoResponse = RegisterUserInfoResponse
+                .newBuilder()
+                .setResultCode(result)
+                .build()
+        responseObserver.onNext(userInfoResponse)
+        responseObserver.onCompleted()
     }
 }
