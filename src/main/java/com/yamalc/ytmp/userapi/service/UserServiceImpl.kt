@@ -9,7 +9,7 @@ import java.io.IOException
 import java.util.logging.Logger
 
 @GRpcService
-class UserService(private val usersMapper: UsersMapper) : UserGrpc.UserImplBase() {
+class UserServiceImpl(private val usersMapper: UsersMapper) : UserGrpc.UserImplBase() {
     private var logger: Logger = Logger.getLogger(javaClass.name)
     override fun getUserInfo(request: UserIdRequest,
                              responseObserver: StreamObserver<UserInfoResponse>) {
