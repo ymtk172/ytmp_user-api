@@ -1,7 +1,6 @@
 package com.yamalc.ytmp.userapi.service
 
 import com.yamalc.ytmp.grpc.user.*
-import com.yamalc.ytmp.userapi.domain.UserProperties
 import com.yamalc.ytmp.userapi.mapper.UsersMapper
 import io.grpc.stub.StreamObserver
 import org.lognet.springboot.grpc.GRpcService
@@ -14,16 +13,24 @@ class UserServiceImpl(private val usersMapper: UsersMapper) : UserGrpc.UserImplB
     override fun getUserInfo(request: UserIdRequest,
                              responseObserver: StreamObserver<UserInfoResponse>) {
         logger.info(String.format("request: id = %s", request.id))
-        val result: UserProperties = try {
-            usersMapper.select(request.id)
+        var displayName = ""
+        val resultType = try {
+            val result = usersMapper.select(request.id)
+            if (result == null ) {
+                ResultType.NOT_EXISTS
+            } else {
+                displayName = result.display_name
+                ResultType.SUCCESS
+            }
         } catch (e: IOException) {
             println("DB access error occurred")
             throw e
         }
         val userInfoResponse = UserInfoResponse
                 .newBuilder()
-                .setId(result.user_id)
-                .setDisplayName(result.display_name)
+                .setResult(resultType)
+                .setId(request.id)
+                .setDisplayName(displayName)
                 .build()
         responseObserver.onNext(userInfoResponse)
         responseObserver.onCompleted()
@@ -32,16 +39,20 @@ class UserServiceImpl(private val usersMapper: UsersMapper) : UserGrpc.UserImplB
     override fun registerUserInfo(request: UserInfoRequest,
                                   responseObserver: StreamObserver<RegisterUserInfoResponse>) {
         logger.info(String.format("request: id = %s", request.id))
-        val result: String = try {
+        val resultType = try {
             val result: Int = usersMapper.insert(request.id, request.displayName)
-            println(request)
-            "success"
+            println(result)
+            if (result != 0) {
+                ResultType.SUCCESS
+            } else {
+                ResultType.ALREADY_EXISTS
+            }
         } catch (e: IOException) {
-            "DB access error occurred"
+            ResultType.FAILURE
         }
         val userInfoResponse = RegisterUserInfoResponse
                 .newBuilder()
-                .setResultCode(result)
+                .setResult(resultType)
                 .build()
         responseObserver.onNext(userInfoResponse)
         responseObserver.onCompleted()
