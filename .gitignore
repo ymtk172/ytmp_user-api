@@ -33,3 +33,4 @@ build/
 # maven
 .mvn/
 mvn*
+sql/export_edit.sql
