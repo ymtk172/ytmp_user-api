@@ -3,7 +3,6 @@ package com.yamalc.ytmp.userapi.service
 import com.yamalc.ytmp.grpc.user.*
 import com.yamalc.ytmp.userapi.mapper.UsersMapper
 import io.grpc.Status
-import io.grpc.protobuf.ProtoUtils
 import io.grpc.stub.StreamObserver
 import org.lognet.springboot.grpc.GRpcService
 import org.springframework.beans.factory.annotation.Value
@@ -50,26 +49,25 @@ class UserServiceImpl(private val usersMapper: UsersMapper, val validator: Valid
         request.userInfoList.forEachIndexed { index, userInfo ->
             val constraintViolations: Set<ConstraintViolation<UserInfo>> = validator.validate<UserInfo>(userInfo)
             if(constraintViolations.isNotEmpty()) {
-                val errorDetailBuilder = ErrorDetail.newBuilder()
-                        .setCode(ErrorCode.VALIDATION_ERROR)
+                val businessErrorDetailBuilder = BusinessErrorDetail.newBuilder()
+                        .setCode(BusinessErrorCode.VALIDATION_ERROR)
                         .setMessage("Validation failed.")
                 constraintViolations.forEach {
-                    val errorInfo = ErrorInfo.newBuilder()
+                    val errorInfo = BusinessErrorInfo.newBuilder()
                             .setBusinessErrorCode("VALIDATION_FAILED")
                             .setErrorLineNumber(index.toString())
                             .setErrorField(userInfoRequestKeyMap!!.getOrElse(it.propertyPath.toString()) { 0 }) //定義誤りで見つからなければ0を入れる
                             .setErrorDescription(it.message)
                             .build()
-                    errorDetailBuilder.addErrorInfo(errorInfo)
+                    businessErrorDetailBuilder.addErrorInfo(errorInfo)
                 }
-                val metadata = io.grpc.Metadata()
-                val errorDetail = errorDetailBuilder.build()
-                val key: io.grpc.Metadata.Key<ErrorDetail> = ProtoUtils.keyForProto(errorDetail)
-                metadata.put(key, errorDetail)
-                val e = Status.INTERNAL
-                        .withDescription("Validation failed occurred.")
-                        .asRuntimeException(metadata)
-                responseObserver.onError(e)
+                val errorUserInfoResponse = RegisterUserInfoResponse
+                    .newBuilder()
+                    .setResult(ResultType.FAILURE)
+                    .setBusinessErrorDetail(businessErrorDetailBuilder)
+                    .build()
+                responseObserver.onNext(errorUserInfoResponse)
+                responseObserver.onCompleted()
                 return
             }
             logger.info(String.format("... Inserting request: id = %s", userInfo.id))
