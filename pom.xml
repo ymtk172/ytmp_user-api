@@ -11,7 +11,7 @@
     </parent>
     <groupId>com.yama-lc.ytmp</groupId>
     <artifactId>user-api</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -25,7 +25,7 @@
         <dependency>
             <groupId>com.yama-lc.ytmp.grpc</groupId>
             <artifactId>user</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2-SNAPSHOT</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.grpc</groupId>
